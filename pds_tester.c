@@ -41,23 +41,7 @@ void process_line( char *test_case )
 
 	sscanf(test_case, "%s%s%s", command, param1, param2);
 	printf("Test case: %s", test_case); fflush(stdout);
-	if( !strcmp(command,"CREATE") ){
-		strcpy(repo_name, param1);
-		if( !strcmp(param2,"0") )
-			expected_status = CONTACT_SUCCESS;
-		else
-			expected_status = CONTACT_FAILURE;
-
-		status = pds_create( repo_name );
-		if( status == expected_status ){
-			TREPORT("PASS", "");
-		}
-		else{
-			sprintf(info,"pds_create returned status %d",status);
-			TREPORT("FAIL", info);
-		}
-	}
-	else if( !strcmp(command,"OPEN") ){
+	if( !strcmp(command,"OPEN") ){
 		strcpy(repo_name, param1);
 		if( !strcmp(param2,"0") )
 			expected_status = CONTACT_SUCCESS;
@@ -65,6 +49,10 @@ void process_line( char *test_case )
 			expected_status = CONTACT_FAILURE;
 
 		status = pds_open( repo_name, rec_size );
+		if(status == PDS_SUCCESS)
+			status = CONTACT_SUCCESS;
+		else
+			status = CONTACT_FAILURE;
 		if( status == expected_status ){
 			TREPORT("PASS", "");
 		}
@@ -84,6 +72,10 @@ void process_line( char *test_case )
 		sprintf(testContact.contact_name,"Name-of-%d",contact_id);
 		sprintf(testContact.phone,"Phone-of-%d",contact_id);
 		status = add_contact( &testContact );
+		if(status == PDS_SUCCESS)
+			status = CONTACT_SUCCESS;
+		else
+			status = CONTACT_FAILURE;
 		if( status == expected_status ){
 			TREPORT("PASS", "");
 		}
@@ -101,6 +93,10 @@ void process_line( char *test_case )
 		sscanf(param1, "%d", &contact_id);
 		testContact.contact_id = -1;
 		status = search_contact( contact_id, &testContact );
+		if(status == PDS_SUCCESS)
+			status = CONTACT_SUCCESS;
+		else
+			status = CONTACT_FAILURE;
 		if( status != expected_status ){
 			sprintf(info,"search key: %d; Got status %d",contact_id, status);
 			TREPORT("FAIL", info);
@@ -136,7 +132,11 @@ void process_line( char *test_case )
 		sscanf(param1, "%s", phone_num);
 		sscanf(param2, "%d", &expected_io);
 		testContact.contact_id = -1;
-    int actual_io = 0;
+		int actual_io = 0;
+		if(status == PDS_SUCCESS)
+			status = CONTACT_SUCCESS;
+		else
+			status = CONTACT_FAILURE;
 		status = search_contact_by_phone( phone_num, &testContact, &actual_io );
 		if( status != expected_status ){
 			sprintf(info,"search key: %d; Got status %d",contact_id, status);
@@ -182,6 +182,10 @@ void process_line( char *test_case )
 			expected_status = CONTACT_FAILURE;
 
 		status = pds_close();
+		if(status == PDS_SUCCESS)
+			status = CONTACT_SUCCESS;
+		else
+			status = CONTACT_FAILURE;
 		if( status == expected_status ){
 			TREPORT("PASS", "");
 		}

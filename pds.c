@@ -77,7 +77,18 @@ int get_rec_by_ndx_key( int key, void *rec )
 
 int get_rec_by_non_ndx_key(void *key,void *rec,int (*matcher)(void *rec, void *key),int *io_count)
 {
-  return 0;
+  if( repo_handle.repo_status == PDS_REPO_OPEN)
+  {
+    fseek(repo_handle.pds_data_fp, 0, SEEK_SET);
+    while(feof(repo_handle.pds_data_fp))
+    {
+      fread( rec, sizeof(repo_handle.rec_size), 1, repo_handle.pds_data_fp );
+      if( matcher(rec, key) == 0)
+        return PDS_SUCCESS;
+    }
+  }
+  else
+    return PDS_FILE_ERROR;
 }
 
 int put_rec_by_key( int key, void *rec )

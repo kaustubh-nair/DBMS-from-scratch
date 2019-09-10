@@ -1,6 +1,5 @@
 //
 //
-//
 //  Please use gcc 7.4.0
 //
 //
@@ -36,6 +35,7 @@ int pds_open( char *repo_name, int rec_size )
     {
       repo_handle.rec_size = rec_size;
       pds_load_ndx();
+      bst_print(repo_handle.pds_bst);
       fclose(repo_handle.pds_ndx_fp);
       repo_handle.repo_status = PDS_REPO_OPEN;
       return PDS_SUCCESS;
@@ -64,7 +64,7 @@ int get_rec_by_ndx_key( int key, void *rec )
       fseek(repo_handle.pds_data_fp, temp->offset, SEEK_SET);
 
       //read contact; (temporary contact variable is not necessary here since non-null index ensures correct search result)
-      fread( rec, sizeof( struct Contact ), 1, repo_handle.pds_data_fp );
+      fread( rec,  repo_handle.rec_size , 1, repo_handle.pds_data_fp );
 
       return PDS_SUCCESS;
     }
@@ -77,14 +77,21 @@ int get_rec_by_ndx_key( int key, void *rec )
 
 int get_rec_by_non_ndx_key(void *key,void *rec,int (*matcher)(void *rec, void *key),int *io_count)
 {
+  int count = 0;
   if( repo_handle.repo_status == PDS_REPO_OPEN)
   {
     fseek(repo_handle.pds_data_fp, 0, SEEK_SET);
-    while(feof(repo_handle.pds_data_fp))
+    while(1)
     {
-      fread( rec, sizeof(repo_handle.rec_size), 1, repo_handle.pds_data_fp );
+      int status = fread( rec, repo_handle.rec_size, 1, repo_handle.pds_data_fp );
+      if( status != 1)
+        break;
+      count = count + 1;
       if( matcher(rec, key) == 0)
+      {
+        *io_count = count;
         return PDS_SUCCESS;
+      }
     }
   }
   else
@@ -104,7 +111,7 @@ int put_rec_by_key( int key, void *rec )
     offset = ftell(repo_handle.pds_data_fp);
 
     // typecast pointer and write it
-    write_status = fwrite( (struct Contact* )rec, sizeof(struct Contact), 1, repo_handle.pds_data_fp);
+    write_status = fwrite( rec, repo_handle.rec_size, 1, repo_handle.pds_data_fp);
     if( write_status == 1 )
     {
       // insert index in bst
@@ -113,7 +120,9 @@ int put_rec_by_key( int key, void *rec )
 
       bst_insert_status = bst_add_node( &repo_handle.pds_bst, key, index );
       if( bst_insert_status == BST_SUCCESS )
+      {
         return PDS_SUCCESS;
+      }
       else 
         return bst_insert_status;
     }
@@ -126,6 +135,7 @@ int put_rec_by_key( int key, void *rec )
 
 int pds_close()
 {
+      bst_print(repo_handle.pds_bst);
   if( repo_handle.repo_status == PDS_REPO_OPEN )
   {
     // set file names 
@@ -144,6 +154,7 @@ int pds_close()
       if( bst_status == 1 )
       {
         bst_free( repo_handle.pds_bst );
+        repo_handle.pds_bst = NULL;
 
         int status1 = fclose(repo_handle.pds_data_fp);
         int status2 = fclose(repo_handle.pds_ndx_fp);
@@ -156,7 +167,8 @@ int pds_close()
       }
     }
   }
-  return PDS_FILE_ERROR;
+  else
+    return PDS_FILE_ERROR;
 }
 
 static void set_file_names( char *repo_name, char *data_file_name, char *index_file_name )
@@ -168,15 +180,17 @@ static void set_file_names( char *repo_name, char *data_file_name, char *index_f
   strcat( index_file_name, ".ndx" );
 }
 
+// use preorder traversal to save file
 static int save_bst_in_file( struct BST_Node *root )
 {
-  if ( root == NULL)
+  if( root == NULL)
     return 1;
 
+  fseek(repo_handle.pds_ndx_fp, 0, SEEK_END);
   struct PDS_NdxInfo *index = (struct PDS_NdxInfo* )root->data;
 
   if( index != NULL)
-    fwrite( index, sizeof( struct PDS_NdxInfo ), 1, repo_handle.pds_ndx_fp );
+    fwrite( index, sizeof(struct PDS_NdxInfo), 1, repo_handle.pds_ndx_fp );
 
   save_bst_in_file( root->left_child );
   save_bst_in_file( root->right_child );
@@ -190,7 +204,7 @@ int pds_load_ndx()
   {
     struct PDS_NdxInfo *index = (struct PDS_NdxInfo*)malloc(sizeof(struct PDS_NdxInfo));
     //read into node
-    int status = fread( index, sizeof( struct PDS_NdxInfo ), 1, repo_handle.pds_ndx_fp );
+    int status = fread( index, sizeof(struct PDS_NdxInfo), 1, repo_handle.pds_ndx_fp );
     if( status == 0)
       break;
     //add node to bst

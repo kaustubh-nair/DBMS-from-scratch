@@ -133,11 +133,11 @@ void process_line( char *test_case )
 		sscanf(param2, "%d", &expected_io);
 		testContact.contact_id = -1;
 		int actual_io = 0;
+		status = search_contact_by_phone( phone_num, &testContact, &actual_io );
 		if(status == PDS_SUCCESS)
 			status = CONTACT_SUCCESS;
 		else
 			status = CONTACT_FAILURE;
-		status = search_contact_by_phone( phone_num, &testContact, &actual_io );
 		if( status != expected_status ){
 			sprintf(info,"search key: %d; Got status %d",contact_id, status);
 			TREPORT("FAIL", info);

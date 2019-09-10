@@ -1,4 +1,4 @@
-OPEN scandemo 0
+OPEN newdemo 0
 NON_NDX_SEARCH Phone-of-1011 25
 NON_NDX_SEARCH Phone-of-1014 19
 NON_NDX_SEARCH Phone-of-1044 91

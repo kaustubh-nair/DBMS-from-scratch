@@ -35,7 +35,6 @@ int pds_open( char *repo_name, int rec_size )
     {
       repo_handle.rec_size = rec_size;
       pds_load_ndx();
-      bst_print(repo_handle.pds_bst);
       fclose(repo_handle.pds_ndx_fp);
       repo_handle.repo_status = PDS_REPO_OPEN;
       return PDS_SUCCESS;
@@ -135,7 +134,6 @@ int put_rec_by_key( int key, void *rec )
 
 int pds_close()
 {
-      bst_print(repo_handle.pds_bst);
   if( repo_handle.repo_status == PDS_REPO_OPEN )
   {
     // set file names 

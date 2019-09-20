@@ -19,5 +19,6 @@ void bst_destroy( struct BST_Node *root );
 #define BST_SUCCESS 0
 #define BST_DUP_KEY 1
 #define BST_NULL 2
+#define BST_NOT_FOUND 3
 
 #endif

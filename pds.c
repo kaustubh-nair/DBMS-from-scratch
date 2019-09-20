@@ -59,16 +59,19 @@ int get_rec_by_ndx_key( int key, void *rec )
     {
       struct PDS_NdxInfo *temp;
       temp = index->data;
-      // go to offset in data file
-      fseek(repo_handle.pds_data_fp, temp->offset, SEEK_SET);
+      if( temp->is_deleted == 0 )
+      {
+        // go to offset in data file
+        fseek(repo_handle.pds_data_fp, temp->offset, SEEK_SET);
 
-      //read contact; (temporary contact variable is not necessary here since non-null index ensures correct search result)
-      fread( rec,  repo_handle.rec_size , 1, repo_handle.pds_data_fp );
+        //read contact; (temporary contact variable is not necessary here since non-null index ensures correct search result)
+        int status = fread( rec,  repo_handle.rec_size , 1, repo_handle.pds_data_fp );
 
-      return PDS_SUCCESS;
+        if( status == 1 )
+          return PDS_SUCCESS;
+      }
     }
-    else
-      return PDS_REC_NOT_FOUND;
+    return PDS_REC_NOT_FOUND;
   }
   else
     return PDS_FILE_ERROR;
@@ -76,6 +79,7 @@ int get_rec_by_ndx_key( int key, void *rec )
 
 int get_rec_by_non_ndx_key(void *key,void *rec,int (*matcher)(void *rec, void *key),int *io_count)
 {
+  struct BST_Node *index;
   int count = 0;
   if( repo_handle.repo_status == PDS_REPO_OPEN)
   {
@@ -88,8 +92,19 @@ int get_rec_by_non_ndx_key(void *key,void *rec,int (*matcher)(void *rec, void *k
       count = count + 1;
       if( matcher(rec, key) == 0)
       {
-        *io_count = count;
-        return PDS_SUCCESS;
+        index = bst_search( repo_handle.pds_bst, key );
+        if( index != NULL )
+        {
+          struct PDS_NdxInfo *temp;
+          temp = index->data;
+          if( temp->is_deleted == 0 )
+          {
+            *io_count = count;
+            return PDS_SUCCESS;
+          }
+        }
+        else
+          return PDS_REC_NOT_FOUND;
       }
     }
   }
@@ -116,6 +131,7 @@ int put_rec_by_key( int key, void *rec )
       // insert index in bst
       index->key = key;
       index->offset = offset;
+      index->is_deleted = 0;
 
       bst_insert_status = bst_add_node( &repo_handle.pds_bst, key, index );
       if( bst_insert_status == BST_SUCCESS )
@@ -169,6 +185,59 @@ int pds_close()
     return PDS_FILE_ERROR;
 }
 
+int modify_rec_by_key( int key, void *rec )
+{
+  int write_status;
+  if( repo_handle.repo_status == PDS_REPO_OPEN )
+  {
+    // declare index and contact variables
+    struct BST_Node *index;
+
+    // find index from bst using key
+    index = bst_search( repo_handle.pds_bst, key );
+    if( index != NULL )
+    {
+      struct PDS_NdxInfo *temp;
+      temp = index->data;
+      // go to offset in data file
+      fseek(repo_handle.pds_data_fp, temp->offset, SEEK_SET);
+
+      write_status = fwrite( rec, repo_handle.rec_size, 1, repo_handle.pds_data_fp);
+
+      if( write_status )
+        return PDS_SUCCESS;
+    }
+    else
+      return PDS_REC_NOT_FOUND;
+  }
+  else
+    return PDS_FILE_ERROR;
+}
+int delete_rec_by_ndx_key( int key )
+{
+  if( repo_handle.repo_status == PDS_REPO_OPEN )
+  {
+    // declare index and contact variables
+    struct BST_Node *index;
+    struct PDS_NdxInfo *temp;
+
+    // find index from bst using key
+    index = bst_search( repo_handle.pds_bst, key );
+    temp = index->data;
+    if( index != NULL && temp->is_deleted == 0)
+    {
+      temp->is_deleted = 1;
+      return PDS_SUCCESS;
+    }
+    else
+      return PDS_DELETE_FAILED;
+  }
+  else
+    return PDS_FILE_ERROR;
+
+}
+
+
 static void set_file_names( char *repo_name, char *data_file_name, char *index_file_name )
 {
   strcpy( repo_handle.pds_name, repo_name );
@@ -187,7 +256,7 @@ static int save_bst_in_file( struct BST_Node *root )
   fseek(repo_handle.pds_ndx_fp, 0, SEEK_END);
   struct PDS_NdxInfo *index = (struct PDS_NdxInfo* )root->data;
 
-  if( index != NULL)
+  if( index != NULL && index->is_deleted == 0)
     fwrite( index, sizeof(struct PDS_NdxInfo), 1, repo_handle.pds_ndx_fp );
 
   save_bst_in_file( root->left_child );

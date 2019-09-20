@@ -7,7 +7,7 @@
 struct Contact{
 	int contact_id;
 	char contact_name[30];
-	char phone[15];
+	char phone[30];
 };
 
 extern struct PDS_RepoInfo *repoHandle;

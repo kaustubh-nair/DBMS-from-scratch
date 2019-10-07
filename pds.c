@@ -11,7 +11,6 @@
 #include<stdlib.h>
 #include "pds.h"
 #include "bst.h"
-#include "contact.h"
 
 // Define the global variable
 struct PDS_RepoInfo repo_handle;

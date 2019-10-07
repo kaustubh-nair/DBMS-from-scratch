@@ -1,3 +1,3 @@
 rm a.out
-gcc bst.c pds.c patient.c patient_runner.c
+gcc dbms/bst.c dbms/pds.c app/patient.c app/patient_runner.c
 ./a.out 

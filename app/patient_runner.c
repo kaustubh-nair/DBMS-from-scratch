@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 
-#include "pds.h"
+#include "../dbms/pds.h"
 #include "patient.h"
 
 #define PRINT_OPTIONS printf("OPTIONS:\n1.Add patient\n2.Delete patient\n3.Modify patient\n4.Search patient by id\n5.Search patient by number\n0.Exit\n");

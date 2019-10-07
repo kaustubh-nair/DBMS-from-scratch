@@ -1,11 +1,13 @@
 #ifndef PATIENT_H
 #define PATIENT_H
+#include <stdbool.h>
 
 #define PATIENT_SUCCESS 0
-#define PATIEN_FAILURE 1
+#define PATIENT_FAILURE 1
  
 struct Patient{
 	int patient_id;
+	int patient_number;
 	char firstname[30];
 	char lastname[30];
 	char phone[30];
@@ -20,8 +22,12 @@ struct Patient{
 };
 extern struct PDS_RepoInfo *datastore;
 
-int add_patient();
-int get_patient_by_key();
-int get_patient_by_phone();
-int modify_patient();
-int delete_patient();
+int initialize_db(char *db_name, int rec_size);
+int add_patient(struct Patient *p);
+int get_patient_by_key(struct Patient *p );
+int get_patient_by_number(struct Patient *p , int io_count);
+int modify_patient(int id, struct Patient *p );
+int delete_patient(struct Patient *p );
+int match_patient_number( struct Patient *p, int number );
+int close_db();
+#endif

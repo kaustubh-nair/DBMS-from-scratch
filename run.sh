@@ -1,2 +1,3 @@
-gcc pds.c bst.c contact.c pds_tester.c
-./a.out testcase1.in
+rm a.out
+gcc bst.c pds.c patient.c patient_runner.c
+./a.out 

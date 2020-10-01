@@ -1,5 +1,5 @@
 # DBMS from scratch
-A primitive, custom-made DBMS application written using C
+A primitive, custom-made DBMS application written using C language
 
 It supports basic queries like CREATE, UPDATE, DELETE, SEARCH ( using index/ without index)
 
